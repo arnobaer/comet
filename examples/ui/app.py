@@ -1,5 +1,6 @@
 """Simple UI demonstration example."""
 
+import random
 import sys
 
 import comet
@@ -61,6 +62,14 @@ def main():
         comet.Tree(id="tree", header=["Key", "Value"])
     ))
 
+    first = comet.Button(text="Click")
+    second = comet.Column(
+        comet.ScrollArea(id="scroll", layout=comet.Column(*[comet.CheckBox(text=f"Option {i+1}", checked=random.choice([True, False])) for i in range(64)]))
+    )
+    tab5 = comet.Tab(id="tab5", title="Tab 5", layout=first)
+    tab5.layout = second
+    del first
+
     app.layout = comet.Row(
         comet.Column(
             comet.FieldSet(title="FieldSet 1", layout=comet.Column(
@@ -84,7 +93,7 @@ def main():
             )),
             comet.Stretch()
         ),
-        comet.Tabs(tab1, tab2, tab3, tab4, id="tabs"),
+        comet.Tabs(tab1, tab2, tab3, tab4, tab5, id="tabs"),
         stretch=(2, 7)
     )
 
