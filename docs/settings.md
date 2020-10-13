@@ -1,8 +1,17 @@
 ---
 layout: default
 title: Settings
-nav_order: 5
+nav_order: 6
 ---
+
+# Settings
+{: .no_toc }
+
+## Table of contents
+{: .no_toc .text-delta }
+
+* TOC
+{: toc}
 
 ## Namespace
 
@@ -41,5 +50,8 @@ class Custard(SettingsMixin):
         return self.settings["spam"] = value
 ```
 
+Underlying class `SettingsManager` is thread safe.
+
 List of classes that inherit `SettingsMixin`:
 * [`Application`](application.md)
+* [`Process`](processes.md)

@@ -3,29 +3,20 @@ import time
 import sys
 
 import comet
+from comet import ui
 
 def main():
     app = comet.Application()
 
-    app.layout = comet.Column(
-        comet.Table(
-            id="table",
-            stretch=True,
-            header=["Name", "Status", "HV", "Current", "Temp.", "Calib."]
-        ),
-        comet.Tree(
-            id="tree",
-            header=["Measurement", "Status"]
-        )
-    )
-
     def on_activated(item):
-        comet.show_info("Item", format(item.value))
+        ui.show_info(text=format(item.value))
 
     def on_selected(item):
         print("Item", format(item.value))
 
-    table = app.get("table")
+    table = ui.Table()
+    table.header = "Name", "Status", "HV", "Current", "Temp.", "Calib."
+    table.stretch = True
     table.activated = on_activated
     table.selected = on_selected
     for i in range(10):
@@ -43,15 +34,17 @@ def main():
         # First column editabled
         table[i][0].readonly = False
 
+    table.qt.setCurrentItem(table[0][0].qt)
     table.fit()
 
     def on_activated(index, item):
-        comet.show_info("Item", format(item[index].value))
+        ui.show_info(text=format(item[index].value))
 
     def on_selected(item):
         print("Item", format(item[0].value))
 
-    tree = app.get("tree")
+    tree = ui.Tree()
+    tree.header = "Measurement", "Status"
     tree.activated = on_activated
     tree.selected = on_selected
     tree.append(["Flute 1", "OK"])
@@ -63,6 +56,14 @@ def main():
     tree[0][1].background = "blue"
     #tree[0][1].color = None
     tree[0][1].background = None
+
+    tree.append(["Flute 4", "OK"])
+    tree.append(["Flute 5", "OK"])
+    tree.append(["Flute 6"])
+
+    tree.qt.setCurrentItem(tree[2].qt)
+
+    tree.remove(tree[3])
 
     for i, item in enumerate(tree):
         if i == 1:
@@ -80,25 +81,24 @@ def main():
         for item in item.children:
             print(item[0].checked)
 
-    class Process(comet.Process):
-
-        def run(self):
-            while self.running:
-                for i in range(10):
-                    value = random.choice([True, False])
-                    self.push("hv", i, value)
-                    value = random.uniform(22., 24.)
-                    self.push("temp", i, value)
-                for i in range(2):
-                    value = random.choice(["OK", "FAIL"])
-                    self.push("status", i, value)
-                time.sleep(1)
+    def measure(process):
+        while process.running:
+            for i in range(10):
+                value = random.choice([True, False])
+                process.emit('hv', i, value)
+                value = random.uniform(22., 24.)
+                process.emit('temp', i, value)
+            for i in range(2):
+                value = random.choice(["OK", "FAIL"])
+                process.emit('status', i, value)
+            time.sleep(1)
 
     def on_hv(i, value):
         item = table[i][2]
         if table[i][0].checked:
             item.value = {True: "ON", False: "OFF"}[value]
             item.color = {True: "green", False: "red"}[value]
+            item.bold = not value
         else:
             item.value = None
 
@@ -113,21 +113,28 @@ def main():
             item.value = None
 
     def on_status(i, value):
-        color = {"OK":"green","FAIL":"red"}[value]
+        color = {"OK": "green", "FAIL": "red"}[value]
         tree[i][1].value = value
         tree[i][1].color = color
+        tree[i][1].bold = value == "FAIL"
         for item in tree[i].children:
             if item[0].checked:
                 item[1].value = value
                 item[1].color = color
+                item[1].bold = value == "FAIL"
             else:
                 item[1].value = None
 
-    process = app.processes.add("Process", Process(
-        hv=on_hv,
-        temp=on_temp,
-        status=on_status,
-    ))
+    app.layout = ui.Column(
+        table,
+        tree
+    )
+
+    process = comet.Process(target=measure)
+    process.hv = on_hv
+    process.temp = on_temp
+    process.status = on_status
+    app.processes.add("process", process)
     process.start()
 
     return app.run()

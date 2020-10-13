@@ -5,6 +5,7 @@ import random
 import sys, os
 
 import comet
+from comet import ui
 
 class FakeDataProducer:
     """Fake data source providing realistic temperature and humidity readings."""
@@ -25,36 +26,22 @@ class FakeDataProducer:
         self.time = time.time()
         return self.time, self.temperature, self.humidity
 
-class FakeDataProcess(comet.Process):
-    """Fake data generating process."""
-
-    def run(self):
-        source = FakeDataProducer()
-        while self.running:
-            self.push("reading", source.read())
-            time.sleep(random.uniform(.250, .500))
+def fake_data(process):
+    """Fake data generator."""
+    source = FakeDataProducer()
+    while process.running:
+        process.emit('reading', source.read())
+        time.sleep(random.uniform(.250, .500))
 
 def main():
     app = comet.Application()
     app.title = "Plot"
     app.about = "An example plot application."
 
-    plot = comet.Plot(id="plot", legend="bottom")
-    plot.add_axis("x", align="bottom", type="datetime")
-    plot.add_axis("y1", align="left", text="Temperature [°C]", color="red")
-    plot.add_axis("y2", align="right", text="Humidity [%rH]", color="blue")
-    plot.add_series("temp", "x", "y1", text="Temperature", color="red")
-    plot.add_series("humid", "x", "y2", text="Humidity", color="blue")
-
     def on_reset():
         for series in plot.series.values():
             series.clear()
         plot.fit()
-
-    app.layout = comet.Column(
-        plot,
-        comet.Button(text="Reset", clicked=on_reset)
-    )
 
     def on_reading(value):
         time, temp, humid = value
@@ -65,10 +52,23 @@ def main():
         else:
             plot.fit()
 
-    process = FakeDataProcess(
-        reading=on_reading,
-        failed=app.show_exception
+    plot = ui.Plot(legend="bottom")
+    plot.add_axis("x", align="bottom", type="datetime")
+    plot.add_axis("y1", align="left", text="Temperature [°C]", color="red")
+    plot.add_axis("y2", align="right", text="Humidity [%rH]", color="blue")
+    plot.add_series("temp", "x", "y1", text="Temperature", color="red")
+    plot.add_series("humid", "x", "y2", text="Humidity", color="blue")
+
+    reset_button = ui.Button(text="Reset", clicked=on_reset)
+
+    app.layout = ui.Column(
+        plot,
+        reset_button
     )
+
+    process = comet.Process(target=fake_data)
+    process.reading = on_reading
+    process.failed = ui.show_exception
     process.start()
     app.processes.add("process", process)
 

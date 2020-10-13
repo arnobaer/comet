@@ -411,12 +411,12 @@ class Venus1(Driver):
     HOST_MODE = 0
     TERMINAL_MODE = 1
 
-    def __init__(self, resource):
-        super().__init__(resource)
-        self.x = Axis(resource, self.X_AXIS)
-        self.y = Axis(resource, self.Y_AXIS)
-        self.z = Axis(resource, self.Z_AXIS)
-        self.system = System(resource)
+    def __init__(self, resource, **kwargs):
+        super().__init__(resource, **kwargs)
+        self.x = Axis(self.resource, self.X_AXIS)
+        self.y = Axis(self.resource, self.Y_AXIS)
+        self.z = Axis(self.resource, self.Z_AXIS)
+        self.system = System(self.resource)
 
     @property
     @lock
@@ -765,12 +765,12 @@ class Venus1(Driver):
         # NOTE: from the documentation, page 124
         # [-A1] [-A2] [-A3] [A1+] [A2+] [A3+] setlimit
         limits = [
-            value[0][0],
-            value[1][0],
-            value[2][0],
-            value[0][1],
-            value[1][1],
-            value[2][1],
+            values[0][0],
+            values[1][0],
+            values[2][0],
+            values[0][1],
+            values[1][1],
+            values[2][1],
         ]
         limits = " ".join([format(limit, '.6f') for limit in limits])
         self.resource.write(f'{limits} setlimit')

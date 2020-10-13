@@ -2,27 +2,33 @@ import tempfile
 import unittest
 import os
 
-from comet.process import Thread, Process, ProcessManager, ProcessMixin
+from qutie.application import CoreApplication
+
+from comet.process import Process, ProcessManager, ProcessMixin
 
 class ProcessTest(unittest.TestCase):
 
-    def testThread(self):
-        thread = Thread()
-        self.assertEqual(thread.is_running(), True)
-        thread.start()
-        self.assertEqual(thread.is_running(), True)
-        thread.stop()
-        self.assertEqual(thread.is_running(), False)
-
     def testProcess(self):
-        p = Process()
-        self.assertEqual(p.started, None)
-        self.assertEqual(p.finished, None)
-        self.assertEqual(p.failed, None)
-        p = Process(started=1, finished=2, failed=3)
-        self.assertEqual(p.started, 1)
-        self.assertEqual(p.finished, 2)
-        self.assertEqual(p.failed, 3)
+        app = CoreApplication()
+        def run(process):
+            process.set('value', True)
+            process.emit('event')
+        p = Process(target=run)
+        p.started = lambda: p.set('started', True)
+        p.finished = lambda: p.set('finished', True)
+        p.failed = lambda e, tb: p.set('failed', e)
+        p.event = lambda: p.set('event', True)
+        p.start()
+        app.qt.processEvents()
+        p.stop()
+        app.qt.processEvents()
+        p.join()
+        app.qt.processEvents()
+        self.assertEqual(p.get('value'), True)
+        self.assertEqual(p.get('started'), True)
+        self.assertEqual(p.get('finished'), True)
+        self.assertEqual(p.get('failed'), None)
+        self.assertEqual(p.get('event'), True)
 
     def testProcessManager(self):
         p = Process()

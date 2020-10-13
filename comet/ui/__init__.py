@@ -1,12 +1,5 @@
-from .core import *
-from .widget import *
-from .fieldset import *
-from .input import *
-from .label import *
-from .layout import *
-from .scrollarea import *
-from .tabs import *
-from .table import *
-from .tree import *
+"""Provide qutie widgets and additional widgets."""
+
+from qutie import *
 from .plot import *
-from .dialogs import *
+from .metric import *

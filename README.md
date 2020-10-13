@@ -2,9 +2,13 @@
 
 Control and Measurement Toolkit (COMET)
 
-A PyQt5 powered rapid development tool for creating graphical measurement desktop applications,
-inspired by [QCoDeS](https://github.com/QCoDeS/Qcodes), [Lantz](https://github.com/LabPy/lantz),
-[Slave](https://github.com/p3trus/slave), [FluidLab](https://github.com/fluiddyn/fluidlab) and
+A [Qutie](https://github.com/arnobaer/qutie) powered rapid development
+tool for creating graphical measurement desktop applications for scientific
+laboratory use. Inspired by
+[QCoDeS](https://github.com/QCoDeS/Qcodes),
+[Lantz](https://github.com/LabPy/lantz),
+[Slave](https://github.com/p3trus/slave),
+[FluidLab](https://github.com/fluiddyn/fluidlab) and
 [Dash](https://github.com/plotly/dash).
 
 See the documentation on https://hephy-dd.github.io/comet/
@@ -14,44 +18,49 @@ See the documentation on https://hephy-dd.github.io/comet/
 Install from GitHub using pip
 
 ```bash
-pip install git+https://github.com/hephy-dd/comet.git@0.8.0
+pip install git+https://github.com/hephy-dd/comet.git@0.11.2
 ```
 
 ## Quick start
 
-The following minimal example registers a VISA compatible device, a callback
-action and invokes the application's main window containing a text field and a button.
+The following minimal example registers a VISA compatible instrument, a callback
+action and invokes the application's main window providing a layout with a text
+field and a button.
 
 ```python
 import comet
+from comet import ui
 
 # Create application
-app = comet.Application()
+app = comet.Application("example")
 app.title = "Example"
 app.width = 460
 app.height = 240
 
-# Register IEC compliant device, load optional settings
-app.devices.add("iec", comet.IEC60488(
-  comet.Resource("ASRL2::INSTR", visa_library="@sim")
-))
+# Register resources
+app.resources.add("res", comet.Resource("ASRL2::INSTR", visa_library="@sim"))
+
+# Load persistent settings
 app.devices.load_settings()
 
 # Define a callback
 def on_update():
-  with app.devices.get("iec") as iec:
-      app.layout.get('idn').value =  iec.identification
+    with app.resources.get("res") as res:
+        instr = comet.IEC60488(res)
+        text.value = instr.identification
 
 # Create UI layout
-app.layout = comet.Column(
-    comet.Row(
-        comet.Text(id="idn", readonly=True),
-        comet.Button(text="Read IDN", click=on_update)
+text = ui.Text(readonly=True)
+button = ui.Button(text="Read IDN", clicked=on_update)
+app.layout = ui.Column(
+    ui.Row(
+        text_field,
+        button
     ),
-    comet.Stretch()
+    ui.Stretch()
 )
 
-# Run application
+# Run event loop
 app.run()
 ```
 
